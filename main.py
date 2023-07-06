@@ -43,7 +43,7 @@ app = FastAPI() # instancia de FastAPI()
 @app.get(path="/api/tools/get_all") # esto indica el metodo http.
 async def get_all_tools(category: Union[str, None] = None): # el framework los parametros tipo query se insertan como argumentos de la función(FastAPI los detecta y recupera)
     response = tools_list # al ser la respuesta por defecto "None", nos va a devolver la tool_list completa
-    if category: # nos vamos a asegurar que la categoría exista con este "if"
+    if category: # nos vamos a asegurar que la categoría exista con este "if". Si existe sigue
         response = list(filter(lambda x: x["category"] == category, tools_list))  # NOTA 1
     return JSONResponse(content= tools_list, status_code= 200) # devolvemos response según haya sido el requerimiento/query y el código de estado.
 
@@ -51,3 +51,20 @@ async def get_all_tools(category: Union[str, None] = None): # el framework los p
 # hacemos una prueba con el comando uvicorn main:app --reload
 # NOTA 1: Lo que hace aca es devolver una lista que recibe como parámetro un filtro que a su vez recibe como parámetro una función lambda 
 # que recibe la lista a filtrar. Ademas agregamos como parámetro la lista a filtrar.
+
+# 7mo commit - "Path Params"
+@app.get(path='/api/tools/{tool_id}') # NOTA 2
+async def get_tool(tool_id: str):
+    response = None
+    status_code = 404
+
+    for tool in tools_list:
+        if tool['id'] == tool_id:
+            response = tool
+            status_code = 200
+            break
+    return JSONResponse(content=response, status_code=status_code)
+
+# NOTA 2: Al acceder a localhost:8000/docs veremos que en la documentación tenemos un nuevo "endpoint", el cual es el que obtiene una herramienta
+# en base al "id". Al probar este "endppoint", si mandamos un "id" que figura en nuestro archivo nos devolverá el mismo, caso contrario nos devolverá 
+# un Null con el código 404.
