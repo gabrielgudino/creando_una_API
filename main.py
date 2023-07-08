@@ -112,3 +112,16 @@ async def update_tool(tool_id: str, tool: Tool): # La función asincrónica se e
     else: # aca si ha sido encontrado el index. Entonces reemplazamos el elemento.
         tools_list[index_update] = tool.dict() # lo actualizamos con el objeto tool que indicamos como argumento en update_tool()
     return JSONResponse(content=True, status_code=200)
+
+# 10mo Commit - Método DELETE
+# Este endpoint será consultado mediante el método DELETE que nos servirá para eliminar un registro específico de un API. En el siguiente endpoint requeriremos un "id" para poder
+# identificar el documento a eliminar.
+
+@app.delete(path='/api/tools/{tool_id}') # MÉTODO DELETE.
+async def delete_tool(tool_id: str): # identificamos con el argumento el recurso a eliminar.
+    index_delete = find_index_by_id(tool_id=tool_id) # Buscamos la herramienta a eliminar. Guardamos en "index_delete" el índice de la herramienta q vamos a eliminar.
+    if index_delete is None: # si no encontramos la herramienta devolveremos el codigo de estado 404.
+        return JSONResponse(content=None, status_code=404)
+    else: # si encuentra el "id" elimina el documento y devolverá "True" con el código 200.
+        tools_list.pop(index_delete) # borra el registro
+    return JSONResponse(content=True, status_code=200) # respuesta del API.
