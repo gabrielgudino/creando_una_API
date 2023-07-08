@@ -10,8 +10,9 @@ from fastapi.encoders import jsonable_encoder # transforma la instancia que tene
 from fastapi.responses import JSONResponse # formatea la respuesta JSON y poder incluir el código de estado en la API
 
 from pydantic import BaseModel # BaseModel nos servirá para poder crear las Clases/modelos de datos. 
-from typing import Union # nos permite definir parámetros tipo query opcionales en nuestra API
-# from typing import Optional # lo utilizamos si en el modelo de datos vamos a tener variables opcionales.
+from typing import Union, Optional # nos permite definir parámetros tipo query opcionales en nuestra API
+# from typing import Optional # lo utilizamos si en el modelo de datos vamos a tener variables opcionales. Lo agregamos junto con Union en la linea
+# anterior.
 
 from constants import FAKE_DB_TOOLS # ver ## 2
 
@@ -21,7 +22,7 @@ tools_list.extend(FAKE_DB_TOOLS)
 # Creamos la clase que va a instanciar BaseModel
 
 class Tool(BaseModel):
-    id: str
+    id: Optional[str] = None # None es por defecto. Lo pusimos opcional por el método PUT.
     name: str
     category: str
 #   email: Optional[str] # ejemplo de como crear una variable opcional
@@ -40,7 +41,7 @@ app = FastAPI() # instancia de FastAPI()
 
 # luego debemos indicarle a nuestro servidor cual va a ser la ruta que nos va a devolver todas las herramientas:
 
-@app.get(path="/api/tools/get_all") # esto indica el metodo http.
+@app.get(path="/api/tools/get_all") # esto indica el metodo http. "endpoint1"
 async def get_all_tools(category: Union[str, None] = None): # el framework los parametros tipo query se insertan como argumentos de la función(FastAPI los detecta y recupera)
     response = tools_list # al ser la respuesta por defecto "None", nos va a devolver la tool_list completa
     if category: # nos vamos a asegurar que la categoría exista con este "if". Si existe sigue
@@ -53,7 +54,7 @@ async def get_all_tools(category: Union[str, None] = None): # el framework los p
 # que recibe la lista a filtrar. Ademas agregamos como parámetro la lista a filtrar.
 
 # 7mo commit - "Path Params"
-@app.get(path='/api/tools/{tool_id}') # NOTA 2
+@app.get(path='/api/tools/{tool_id}') # NOTA 2 "endopoint2"
 async def get_tool(tool_id: str):
     response = None
     status_code = 404
@@ -68,3 +69,20 @@ async def get_tool(tool_id: str):
 # NOTA 2: Al acceder a localhost:8000/docs veremos que en la documentación tenemos un nuevo "endpoint", el cual es el que obtiene una herramienta
 # en base al "id". Al probar este "endppoint", si mandamos un "id" que figura en nuestro archivo nos devolverá el mismo, caso contrario nos devolverá 
 # un Null con el código 404.
+
+# 8vo commit - "Método Post"
+# Este método es utilizado para crear nuevos registros en el API. Implementaremos un nuevo endpoint del tipo POST, el cual va a recibir en el
+# "request body" el objeto a crear en el listado. Para ésto es necesario crear un modelo de datos. Ésto ya lo hicimos al crear la clase "Tool" en la
+# linea 23 que hereda de la base BaseModel. Los atributos son "id", "name", "category". El objeto se recibirá como JSON en la API y FastAPI se encargará
+# de parsearlo y convertirlo en una clase con su modelo de datos. Como el modelo este se utlizará tanto para el metodo POST, como el PUT se necesitara
+# que el atributo id sea opcional.
+@app.post(path='/api/tools') # NOTA 3 Los parámetros del tipo "request body" no son parte del endpoint, x lo que se va a enviar como tales ("request body") 
+# de la sig. manera:
+async def create_tool(tool:Tool): # Lo q hace FastAPI es leer el "request body", obtener los atributos necesarios para instanciar la clase Tool devolviendo una instancia de la misma.
+    tool_id = tool.id # si este id existe queda como tal, sino existe debemos hacer una generación.
+    if tool_id is not None: # validamos si existe o no tool_id
+        tool.id = f'{tool.name}-{tool.category}' # si no existe creamos el id
+    tools_list.append(tool.dict()) # lo agregamos a constants.py
+    json_data = jsonable_encoder(tool)
+    return JSONResponse(content=json_data, status_code=201)
+
