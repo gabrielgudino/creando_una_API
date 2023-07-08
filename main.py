@@ -1,4 +1,4 @@
-import uvicorn
+#import uvicorn
 from fastapi import FastAPI
 
 # Como vamos a trabajar con modelos de datos usando Pydantic y estamos usando un servicio web que nos
